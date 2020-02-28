@@ -37,27 +37,38 @@ class FlowMeterData():
         self.clicks = 0
         self.lastClick = int(time.time() * FlowMeterData.MS_IN_A_SECOND)
         self.clickDelta = 0
+        self.lastTenClick = 0
         self.hertz = 0.0
         self.flow = 0.0
         self.pour = 0.0
         self.enabled = True
+        self.lstTenDelta = []
+        self.totalVolume = 0.00
 
-    def update(self, currentTime, hertzProp):
-        #print hertzProp
+    def update(self, currentTime, clickPerLiter):
         self.clicks += 1
+        self.totalVolume = self.clicks / clickPerLiter # total liters
+
         # get the time delta
         self.clickDelta = max((currentTime - self.lastClick), 1)
-        # calculate the instantaneous speed
+        # calculate the rate of flow
         if self.enabled is True and self.clickDelta < 1000:
-            self.hertz = FlowMeterData.MS_IN_A_SECOND / self.clickDelta
-            self.flow = self.hertz / (FlowMeterData.SECONDS_IN_A_MINUTE * hertzProp)  # In Liters per second
-            instPour = self.flow * (self.clickDelta / FlowMeterData.MS_IN_A_SECOND)  
-            self.pour += instPour
-        # Update the last click
+            self.lstTenDelta.append(self.clickDelta)
+
+            # Take liters per click and divide by the average ms delta from 10 clicks ,
+            if len(self.lstTenDelta) >= 10:
+                self.avgTenDelta = sum(self.lstTenDelta) / len(self.lstTenDelta)
+                self.pour = ((1/clickPerLiter) / self.avgTenDelta) * 1000
+                del self.lstTenDelta[:]
+        else:
+            self.pour = 0.0
+
         self.lastClick = currentTime
 
     def clear(self):
-        self.pour = 0
+        self.pour = 0.0
+        self.clicks = 0
+        self.totalVolume = 0.0
         return str(self.pour)
 
 
@@ -65,8 +76,8 @@ class FlowMeterData():
 class Flowmeter(SensorPassive):
     fms = dict()
     gpio = Property.Select("GPIO", options=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27])
-    sensorShow = Property.Select("Flowmeter display", options=["Total volume", "Flow, unit/s"])
-    hertzProp = Property.Text("Hertz (Default value is 7.5) Requires restart!", configurable=True, default_value="7.5", description="Here you can adjust the hertz for the flowmeter. Whit this value you can calibrate the sensor.")
+    sensorShow = Property.Select("Flowmeter display", options=["Total volume", "Flow, unit/s","Pulse"])
+    clickPerLiter = Property.Text("Pulses per Liter (Default value is 596) Requires restart!", configurable=True, default_value="596", description="Here you can adjust the amount of clicks/pulses per liter for the flowmeter. With this value you can calibrate the sensor.")
     def init(self):
         unit = cbpi.get_config_parameter("flowunit", None)
         if unit is None:
@@ -86,43 +97,62 @@ class Flowmeter(SensorPassive):
         unit = cbpi.get_config_parameter("flowunit", None)
         if self.sensorShow == "Flow, unit/s":
             unit = unit + "/s"
+        if self.sensorShow == "Pulse":
+            unit = "Pulses"
         return unit
 
     def doAClick(self, channel):
         currentTime = int(time.time() * FlowMeterData.MS_IN_A_SECOND)
-        hertzProp = self.hertzProp
-        self.fms[int(self.gpio)].update(currentTime, float(hertzProp))
+        clickPerLiter = self.clickPerLiter
+        self.fms[int(self.gpio)].update(currentTime, float(clickPerLiter))
+
 
     def convert(self, inputFlow):
         unit = cbpi.get_config_parameter("flowunit", None)
-        if unit == "gal(us)": 
+        if unit == "gal(us)":
             inputFlow = inputFlow * 0.264172052
-        elif unit == "gal(uk)": 
+        elif unit == "gal(uk)":
             inputFlow = inputFlow * 0.219969157
-        elif unit == "qt": 
+        elif unit == "qt":
             inputFlow = inputFlow * 1.056688
         else:
             pass
         if self.sensorShow == "Flow, unit/s":
+            inputFlow = "{0:.3f}".format(inputFlow)
+        elif self.sensorShow == "Total volume":
             inputFlow = "{0:.2f}".format(inputFlow)
+        #elif self.sensorShow == "Pulse":
+            #inputFlow = "{0:.0f}".format(inputFlow)
         else:
-            inputFlow = "{0:.2f}".format(inputFlow)
+            pass
         return inputFlow
 
     def read(self):
         if self.sensorShow == "Total volume":
-            flow = self.fms[int(self.gpio)].pour
+            flow = self.fms[int(self.gpio)].totalVolume
             flowConverted = self.convert(flow)
             self.data_received(flowConverted)
         elif self.sensorShow == "Flow, unit/s":
-            flow = self.fms[int(self.gpio)].flow
-            flowConverted = self.convert(flow)
-            self.data_received(flowConverted)
+            # reset flow to zero if no flow.
+            self.readCurrentTime = int(time.time() * FlowMeterData.MS_IN_A_SECOND)
+            self.readCurrentdelta = self.readCurrentTime - self.fms[int(self.gpio)].lastClick
+            if self.readCurrentdelta < 1000:
+                flow = self.fms[int(self.gpio)].pour
+                flowConverted = self.convert(flow)
+                self.data_received(flowConverted)
+            else:
+                flow = 0.0
+                flowConverted = self.convert(flow)
+                self.data_received(flowConverted)
+        elif self.sensorShow == "Pulse":
+            flow = self.fms[int(self.gpio)].clicks
+            #flowConverted = self.convert(flow)
+            self.data_received(flow)
         else:
             print "error"
 
     def getValue(self):
-        flow = self.fms[int(self.gpio)].pour
+        flow = self.fms[int(self.gpio)].totalVolume
         flowConverted = self.convert(flow)
         return flowConverted
 
