@@ -77,7 +77,7 @@ class Flowmeter(SensorPassive):
                 cbpi.notify("Flowmeter Error", "Unable to update database.", type="danger", timeout=None)
         try:
             GPIO.setup(int(self.gpio),GPIO.IN, pull_up_down = GPIO.PUD_UP)
-            GPIO.add_event_detect(int(self.gpio), GPIO.RISING, callback=self.doAClick, bouncetime=20)
+            GPIO.add_event_detect(int(self.gpio), GPIO.RISING, callback=self.doAClick, bouncetime=2)
             self.fms[int(self.gpio)] = FlowMeterData()
         except Exception as e:
             print e
