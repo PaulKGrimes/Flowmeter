@@ -6,7 +6,7 @@ This is a fork from the orignal project: nanab/Flowmeter
 This plugin is for a flowmeter of magnetic hall type. Like this https://www.adafruit.com/product/828.
 <br>
 
-Update: 
+Update:
 <br>
 There is now a reset function on the sensor in GUI so i have removed the custom actor. To use this click on arrow on sensor an choose reset to zero.
 <br>
@@ -43,7 +43,7 @@ To calibrate:
 1. Set the sensor to "Pulse"
 2. With the sensor starting at zero, run a liter of water through the sensor. This can be done by collecting the water in a graduated cylinder or jar.
 3. Write down the number of "pulses" the sensor counted and put that into the "Pulses per Liter" option in the sensor settings.
-It might be a good idea to do this a few times and get an average pulses per liter. 
+It might be a good idea to do this a few times and get an average pulses per liter.
 
 There is some http api commands avaliable.
 <br>
@@ -64,10 +64,8 @@ Configurable values for the step is:
 <br>
 Actor 1: Actor 1 thats going to be turned On and Off.
 <br>
-Actor 2: Actor 2 thats going to be turned On and Off. ( This is optional you dont have to use it)
-<br>
 Sensor: Flowmeter thats going to be used to measure the volume.
 <br>
-Volume: How much liquid that should pass before turning off actor. 
+Volume: How much liquid that should pass before turning off actor.
 <br>
 Reset flowmeter when done: Here you can choose if you want the flowmeters value to be set to zero when step is finnished. 1 for yes and 0 for no.
