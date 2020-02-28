@@ -1,4 +1,4 @@
-//There will be no more updates from me on this repo as i dont have a CPB system anymore. Please dont contact me on email or facebook about this plugin as cant help you whit it.
+This is a fork from the orignal project: nanab/Flowmeter
 
 
 # Flowmeter plugin for CraftbeerPi
@@ -39,15 +39,21 @@ Gallons UK.
 Quarts.
 <br>
 
+To calibrate:
+1. Set the sensor to "Pulse"
+2. With the sensor starting at zero, run a liter of water through the sensor. This can be done by collecting the water in a graduated cylinder or jar.
+3. Write down the number of "pulses" the sensor counted and put that into the "Pulses per Liter" option in the sensor settings.
+It might be a good idea to do this a few times and get an average pulses per liter. 
+
 There is some http api commands avaliable.
 <br>
-To get the id of your sensor: http://"ip of pi":5000/api/flowmeter/list_all_sensors 
+To get the id of your sensor: http://"ip of pi":5000/api/flowmeter/list_all_sensors
 <br>
 For getting the value of sensor: http://"ip of pi:5000api/flowmeter/"sensor id"
 <br>
 For reseting the sensors value: http://"ip of pi":5000/api/flowmeter/"sensor id"/reset
 <br>
-You have to enter the id of the flowmeter which you can find by using the api command http://"ip of pi":5000/api/flowmeter/list_all_sensors 
+You have to enter the id of the flowmeter which you can find by using the api command http://"ip of pi":5000/api/flowmeter/list_all_sensors
 <br>
 <br>
 There is a custom step added for the flowmeter.
