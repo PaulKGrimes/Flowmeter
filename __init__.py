@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Flowmeter plugin for Craftbeerpi 
+# Flowmeter plugin for Craftbeerpi
 # Version 1.5 made by nanab
 # https://github.com/nanab/Flowmeter
 # Some code taken from https://github.com/adafruit/Kegomatic
@@ -76,8 +76,8 @@ class FlowMeterData():
 class Flowmeter(SensorPassive):
     fms = dict()
     gpio = Property.Select("GPIO", options=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27])
-    sensorShow = Property.Select("Flowmeter display", options=["Total volume", "Flow, unit/s","Pulse"])
-    clickPerLiter = Property.Text("Pulses per Liter (Default value is 596) Requires restart!", configurable=True, default_value="596", description="Here you can adjust the amount of clicks/pulses per liter for the flowmeter. With this value you can calibrate the sensor.")
+    sensorShow = Property.Select("Flowmeter display", options=["Total volume", "Flow, unit/s", "Flow, unit/min", "Pulse"])
+    clickPerLiter = Property.Text("Pulses per Liter (Default value is 450) Requires restart!", configurable=True, default_value="450", description="Here you can adjust the number of clicks/pulses per liter for the flowmeter. With this value you can calibrate the sensor.")
     def init(self):
         unit = cbpi.get_config_parameter("flowunit", None)
         if unit is None:
@@ -97,6 +97,8 @@ class Flowmeter(SensorPassive):
         unit = cbpi.get_config_parameter("flowunit", None)
         if self.sensorShow == "Flow, unit/s":
             unit = unit + "/s"
+        if self.sensorShow == "Flow, unit/min":
+            unit = unit + "/min"
         if self.sensorShow == "Pulse":
             unit = "Pulses"
         return unit
@@ -119,8 +121,10 @@ class Flowmeter(SensorPassive):
             pass
         if self.sensorShow == "Flow, unit/s":
             inputFlow = "{0:.3f}".format(inputFlow)
+        if self.sensorShow == "Flow, unit/min":
+            inputFlow = "{0:.3f}".format(inputFlow*FlowMeterData.SECONDS_IN_A_MINUTE)
         elif self.sensorShow == "Total volume":
-            inputFlow = "{0:.2f}".format(inputFlow)
+            inputFlow = "{0:.3f}".format(inputFlow)
         #elif self.sensorShow == "Pulse":
             #inputFlow = "{0:.0f}".format(inputFlow)
         else:
@@ -132,7 +136,7 @@ class Flowmeter(SensorPassive):
             flow = self.fms[int(self.gpio)].totalVolume
             flowConverted = self.convert(flow)
             self.data_received(flowConverted)
-        elif self.sensorShow == "Flow, unit/s":
+        elif self.sensorShow == "Flow, unit/s" or self.sensorShow == "Flow, unit/min":
             # reset flow to zero if no flow.
             self.readCurrentTime = int(time.time() * FlowMeterData.MS_IN_A_SECOND)
             self.readCurrentdelta = self.readCurrentTime - self.fms[int(self.gpio)].lastClick
@@ -208,7 +212,7 @@ class Flowmeter(StepBase):
 
     def init(self):
         if int(self.actorA) is not None:
-            self.actor_on(int(self.actorA))   
+            self.actor_on(int(self.actorA))
 
     @cbpi.action("Turn Actor OFF")
     def start(self):
